@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Communication Tracker</title>
+    <title>Client Communication Tracker (Cloud-Powered)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -18,9 +18,27 @@
             word-wrap: break-word;
             max-width: 250px;
         }
+        /* Simple spinner for loading state */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
+
+    <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-90 flex flex-col justify-center items-center z-50">
+        <div class="loader"></div>
+        <p class="mt-4 text-gray-600">Connecting to database...</p>
+    </div>
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
         <header class="mb-8">
@@ -36,6 +54,11 @@
             <button id="manageSpokespersonBtn" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-75">
                 Manage Spokespersons
             </button>
+        </div>
+        
+        <!-- User ID Display -->
+        <div class="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+            <strong>Your User ID:</strong> <span id="userIdDisplay"></span> (Share this with team members to collaborate)
         </div>
 
         <!-- Communication Log Table -->
@@ -70,69 +93,17 @@
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-transform duration-300 scale-95">
             <form id="logForm" class="p-8">
                 <h2 id="modalTitle" class="text-2xl font-bold mb-6 text-gray-900">Add New Communication Log</h2>
-                <input type="hidden" id="editIndex">
+                <input type="hidden" id="editLogId">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Date -->
-                    <div>
-                        <label for="date" class="block mb-2 text-sm font-medium text-gray-700">Date</label>
-                        <input type="date" id="date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
-                    </div>
-                    <!-- Platform -->
-                    <div>
-                        <label for="platform" class="block mb-2 text-sm font-medium text-gray-700">Platform</label>
-                        <input type="text" id="platform" placeholder="e.g., Client's Website" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
-                    </div>
-                    <!-- Spokesperson -->
-                    <div>
-                        <label for="spokesperson" class="block mb-2 text-sm font-medium text-gray-700">Spokesperson</label>
-                        <select id="spokesperson" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
-                            <!-- Options will be populated by JS -->
-                        </select>
-                    </div>
-                    <!-- Channel -->
-                    <div>
-                        <label for="channel" class="block mb-2 text-sm font-medium text-gray-700">Channel</label>
-                        <select id="channel" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
-                            <option>Email</option>
-                            <option>Call</option>
-                            <option>Chat</option>
-                            <option>In-Person</option>
-                        </select>
-                    </div>
-                    <!-- Change Discussed -->
-                    <div class="md:col-span-2">
-                        <label for="change" class="block mb-2 text-sm font-medium text-gray-700">Change Discussed / Implemented</label>
-                        <textarea id="change" rows="3" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Describe the key points of the conversation..." required></textarea>
-                    </div>
-                    <!-- Status -->
-                    <div>
-                        <label for="status" class="block mb-2 text-sm font-medium text-gray-700">Status</label>
-                        <select id="status" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
-                            <option>Discussed</option>
-                            <option>Approved</option>
-                            <option>In Progress</option>
-                            <option>Implemented</option>
-                            <option>On Hold</option>
-                            <option>Rejected</option>
-                        </select>
-                    </div>
-                    <!-- Impact Area -->
-                    <div>
-                        <label for="impactArea" class="block mb-2 text-sm font-medium text-gray-700">Impact Area</label>
-                        <select id="impactArea" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
-                            <option>GA4</option>
-                            <option>GTM</option>
-                            <option>Cloud</option>
-                            <option>SEO</option>
-                            <option>Ads</option>
-                            <option>General</option>
-                        </select>
-                    </div>
-                    <!-- Comments -->
-                    <div class="md:col-span-2">
-                        <label for="comments" class="block mb-2 text-sm font-medium text-gray-700">Comments / Follow-up</label>
-                        <textarea id="comments" rows="3" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Any action items or notes for next time..."></textarea>
-                    </div>
+                    <!-- Form fields are the same as before -->
+                    <div><label for="date" class="block mb-2 text-sm font-medium text-gray-700">Date</label><input type="date" id="date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required></div>
+                    <div><label for="platform" class="block mb-2 text-sm font-medium text-gray-700">Platform</label><input type="text" id="platform" placeholder="e.g., Client's Website" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required></div>
+                    <div><label for="spokesperson" class="block mb-2 text-sm font-medium text-gray-700">Spokesperson</label><select id="spokesperson" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required></select></div>
+                    <div><label for="channel" class="block mb-2 text-sm font-medium text-gray-700">Channel</label><select id="channel" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required><option>Email</option><option>Call</option><option>Chat</option><option>In-Person</option></select></div>
+                    <div class="md:col-span-2"><label for="change" class="block mb-2 text-sm font-medium text-gray-700">Change Discussed / Implemented</label><textarea id="change" rows="3" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Describe the key points of the conversation..." required></textarea></div>
+                    <div><label for="status" class="block mb-2 text-sm font-medium text-gray-700">Status</label><select id="status" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required><option>Discussed</option><option>Approved</option><option>In Progress</option><option>Implemented</option><option>On Hold</option><option>Rejected</option></select></div>
+                    <div><label for="impactArea" class="block mb-2 text-sm font-medium text-gray-700">Impact Area</label><select id="impactArea" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required><option>GA4</option><option>GTM</option><option>Cloud</option><option>SEO</option><option>Ads</option><option>General</option></select></div>
+                    <div class="md:col-span-2"><label for="comments" class="block mb-2 text-sm font-medium text-gray-700">Comments / Follow-up</label><textarea id="comments" rows="3" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Any action items or notes for next time..."></textarea></div>
                 </div>
                 <div class="flex justify-end gap-4 mt-8">
                     <button type="button" id="cancelLogBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button>
@@ -147,208 +118,287 @@
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-transform duration-300 scale-95">
             <div class="p-8">
                 <h2 class="text-2xl font-bold mb-6 text-gray-900">Manage Spokespersons</h2>
-                
-                <!-- Add new spokesperson form -->
                 <form id="spokespersonForm" class="flex gap-4 mb-6">
                     <input type="text" id="newSpokespersonName" placeholder="Add new spokesperson name" class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5" required>
                     <button type="submit" class="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">Add</button>
                 </form>
-
-                <!-- List of current spokespersons -->
                 <h3 class="text-lg font-semibold mb-3 text-gray-800">Current List</h3>
-                <div id="spokespersonList" class="max-h-60 overflow-y-auto space-y-2 pr-2">
-                    <!-- Spokespersons will be listed here -->
-                </div>
-
+                <div id="spokespersonList" class="max-h-60 overflow-y-auto space-y-2 pr-2"></div>
                 <div class="flex justify-end mt-8">
                     <button type="button" id="closeSpokespersonModalBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Close</button>
                 </div>
             </div>
         </div>
     </div>
+    
+    <!-- Custom Confirmation Modal -->
+    <div id="confirmModal" class="modal fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center p-4 hidden pointer-events-none opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 text-center transform transition-transform duration-300 scale-95">
+            <h3 id="confirmTitle" class="text-lg font-semibold text-gray-900 mb-4">Are you sure?</h3>
+            <p id="confirmMessage" class="text-sm text-gray-600 mb-6">This action cannot be undone.</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirmCancelBtn" class="py-2 px-6 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button id="confirmOkBtn" class="py-2 px-6 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700">Delete</button>
+            </div>
+        </div>
+    </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // DOM Elements
-            const addLogBtn = document.getElementById('addLogBtn');
-            const manageSpokespersonBtn = document.getElementById('manageSpokespersonBtn');
-            const logModal = document.getElementById('logModal');
-            const spokespersonModal = document.getElementById('spokespersonModal');
-            const cancelLogBtn = document.getElementById('cancelLogBtn');
-            const closeSpokespersonModalBtn = document.getElementById('closeSpokespersonModalBtn');
-            const logForm = document.getElementById('logForm');
-            const spokespersonForm = document.getElementById('spokespersonForm');
-            const logTableBody = document.getElementById('logTableBody');
-            const spokespersonListContainer = document.getElementById('spokespersonList');
-            const spokespersonSelect = document.getElementById('spokesperson');
-            const noLogsMessage = document.getElementById('no-logs-message');
-            const modalTitle = document.getElementById('modalTitle');
-            const editIndexInput = document.getElementById('editIndex');
 
-            // Data storage
-            let communicationLogs = JSON.parse(localStorage.getItem('communicationLogs')) || [];
-            let spokespersons = JSON.parse(localStorage.getItem('spokespersons')) || ['Client Contact A', 'Project Manager B'];
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, deleteDoc, onSnapshot, collection, query, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-            // --- Utility Functions ---
-            const saveData = () => {
-                localStorage.setItem('communicationLogs', JSON.stringify(communicationLogs));
-                localStorage.setItem('spokespersons', JSON.stringify(spokespersons));
-            };
+        // --- Firebase Configuration ---
+        // This configuration is provided by the environment.
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-            const openModal = (modal) => {
-                modal.classList.remove('hidden');
-                setTimeout(() => {
-                    modal.classList.remove('opacity-0', 'pointer-events-none');
-                    modal.querySelector('div').classList.remove('scale-95');
-                }, 10);
-            };
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        let dbUserRef; // To store reference to user's data
+        let dbLogsCollectionRef; // To store reference to logs subcollection
+        let spokespersons = []; // Local cache for spokespersons
+        let currentUserId = null; // To store the current user's ID
 
-            const closeModal = (modal) => {
-                modal.querySelector('div').classList.add('scale-95');
-                modal.classList.add('opacity-0');
-                setTimeout(() => {
-                    modal.classList.add('hidden', 'pointer-events-none');
-                }, 300);
-            };
+        // --- DOM Elements ---
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const addLogBtn = document.getElementById('addLogBtn');
+        const manageSpokespersonBtn = document.getElementById('manageSpokespersonBtn');
+        const logModal = document.getElementById('logModal');
+        const spokespersonModal = document.getElementById('spokespersonModal');
+        const cancelLogBtn = document.getElementById('cancelLogBtn');
+        const closeSpokespersonModalBtn = document.getElementById('closeSpokespersonModalBtn');
+        const logForm = document.getElementById('logForm');
+        const spokespersonForm = document.getElementById('spokespersonForm');
+        const logTableBody = document.getElementById('logTableBody');
+        const spokespersonListContainer = document.getElementById('spokespersonList');
+        const spokespersonSelect = document.getElementById('spokesperson');
+        const noLogsMessage = document.getElementById('no-logs-message');
+        const modalTitle = document.getElementById('modalTitle');
+        const editLogIdInput = document.getElementById('editLogId');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const confirmModal = document.getElementById('confirmModal');
 
-            // --- Rendering Functions ---
-            const renderSpokespersons = () => {
-                // Update the dropdown in the log form
-                spokespersonSelect.innerHTML = spokespersons.map(name => `<option value="${name}">${name}</option>`).join('');
+        // --- Utility Functions ---
+        const openModal = (modal) => {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
 
-                // Update the list in the management modal
-                spokespersonListContainer.innerHTML = spokespersons.map((name, index) => `
-                    <div class="flex justify-between items-center bg-gray-100 p-2 rounded-md">
-                        <span>${name}</span>
-                        <button data-index="${index}" class="delete-spokesperson text-red-500 hover:text-red-700 font-bold">&times;</button>
-                    </div>
-                `).join('');
-                 if(spokespersons.length === 0){
-                    spokespersonListContainer.innerHTML = `<p class="text-gray-500 text-center">No spokespersons added yet.</p>`;
-                }
-            };
+        const closeModal = (modal) => {
+            modal.querySelector('div').classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden', 'pointer-events-none');
+            }, 300);
+        };
+        
+        // Custom confirmation dialog
+        let confirmCallback = null;
+        function showConfirm(title, message, callback) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            confirmCallback = callback;
+            openModal(confirmModal);
+        }
+        document.getElementById('confirmOkBtn').addEventListener('click', () => {
+            if (confirmCallback) confirmCallback(true);
+            closeModal(confirmModal);
+        });
+        document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+            if (confirmCallback) confirmCallback(false);
+            closeModal(confirmModal);
+        });
 
-            const renderTable = () => {
-                logTableBody.innerHTML = '';
-                if (communicationLogs.length === 0) {
-                    noLogsMessage.classList.remove('hidden');
-                    return;
-                }
-                noLogsMessage.classList.add('hidden');
 
-                communicationLogs.forEach((log, index) => {
-                    const row = document.createElement('tr');
-                    row.className = 'bg-white border-b hover:bg-gray-50';
-                    row.innerHTML = `
-                        <td class="px-6 py-4 table-cell">${log.date}</td>
-                        <td class="px-6 py-4 table-cell">${log.platform}</td>
-                        <td class="px-6 py-4 table-cell">${log.spokesperson}</td>
-                        <td class="px-6 py-4 table-cell">${log.channel}</td>
-                        <td class="px-6 py-4 table-cell">${log.change}</td>
-                        <td class="px-6 py-4 table-cell"><span class="px-2 py-1 font-semibold leading-tight text-xs rounded-full" style="${getStatusPillStyle(log.status)}">${log.status}</span></td>
-                        <td class="px-6 py-4 table-cell">${log.impactArea}</td>
-                        <td class="px-6 py-4 table-cell">${log.comments}</td>
-                        <td class="px-6 py-4">
-                            <div class="flex gap-2">
-                                <button data-index="${index}" class="edit-log text-blue-600 hover:text-blue-800">Edit</button>
-                                <button data-index="${index}" class="delete-log text-red-600 hover:text-red-800">Delete</button>
-                            </div>
-                        </td>
-                    `;
-                    logTableBody.appendChild(row);
-                });
-            };
-            
-            const getStatusPillStyle = (status) => {
-                const styles = {
-                    'Implemented': 'background-color: #dcfce7; color: #166534;',
-                    'Approved': 'background-color: #dcfce7; color: #166534;',
-                    'In Progress': 'background-color: #fef9c3; color: #854d0e;',
-                    'Discussed': 'background-color: #e0e7ff; color: #3730a3;',
-                    'On Hold': 'background-color: #feebc8; color: #9c4221;',
-                    'Rejected': 'background-color: #fee2e2; color: #991b1b;',
-                }
-                return styles[status] || 'background-color: #f3f4f6; color: #374151;';
+        // --- Rendering Functions ---
+        const renderSpokespersons = (spokespersonData) => {
+            spokespersons = spokespersonData || [];
+            // Update the dropdown in the log form
+            spokespersonSelect.innerHTML = spokespersons.map(name => `<option value="${name}">${name}</option>`).join('');
+
+            // Update the list in the management modal
+            spokespersonListContainer.innerHTML = spokespersons.map(name => `
+                <div class="flex justify-between items-center bg-gray-100 p-2 rounded-md">
+                    <span>${name}</span>
+                    <button data-name="${name}" class="delete-spokesperson text-red-500 hover:text-red-700 font-bold">&times;</button>
+                </div>
+            `).join('');
+            if(spokespersons.length === 0){
+                spokespersonListContainer.innerHTML = `<p class="text-gray-500 text-center">No spokespersons added yet.</p>`;
             }
+        };
 
+        const renderTable = (logs) => {
+            logTableBody.innerHTML = '';
+            if (!logs || logs.length === 0) {
+                noLogsMessage.classList.remove('hidden');
+                return;
+            }
+            noLogsMessage.classList.add('hidden');
+            
+            // Sort logs by date, newest first
+            const sortedLogs = logs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            // --- Event Handlers ---
-            addLogBtn.addEventListener('click', () => {
-                modalTitle.textContent = "Add New Communication Log";
-                logForm.reset();
-                editIndexInput.value = '';
-                document.getElementById('date').valueAsDate = new Date(); // Set to today
-                openModal(logModal);
+            sortedLogs.forEach(log => {
+                const row = document.createElement('tr');
+                row.className = 'bg-white border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="px-6 py-4 table-cell">${log.date}</td>
+                    <td class="px-6 py-4 table-cell">${log.platform}</td>
+                    <td class="px-6 py-4 table-cell">${log.spokesperson}</td>
+                    <td class="px-6 py-4 table-cell">${log.channel}</td>
+                    <td class="px-6 py-4 table-cell">${log.change}</td>
+                    <td class="px-6 py-4 table-cell"><span class="px-2 py-1 font-semibold leading-tight text-xs rounded-full" style="${getStatusPillStyle(log.status)}">${log.status}</span></td>
+                    <td class="px-6 py-4 table-cell">${log.impactArea}</td>
+                    <td class="px-6 py-4 table-cell">${log.comments}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-2">
+                            <button data-id="${log.id}" class="edit-log text-blue-600 hover:text-blue-800">Edit</button>
+                            <button data-id="${log.id}" class="delete-log text-red-600 hover:text-red-800">Delete</button>
+                        </div>
+                    </td>
+                `;
+                logTableBody.appendChild(row);
             });
+        };
+        
+        const getStatusPillStyle = (status) => {
+            const styles = {
+                'Implemented': 'background-color: #dcfce7; color: #166534;',
+                'Approved': 'background-color: #dcfce7; color: #166534;',
+                'In Progress': 'background-color: #fef9c3; color: #854d0e;',
+                'Discussed': 'background-color: #e0e7ff; color: #3730a3;',
+                'On Hold': 'background-color: #feebc8; color: #9c4221;',
+                'Rejected': 'background-color: #fee2e2; color: #991b1b;',
+            }
+            return styles[status] || 'background-color: #f3f4f6; color: #374151;';
+        }
 
-            manageSpokespersonBtn.addEventListener('click', () => {
-                renderSpokespersons();
-                openModal(spokespersonModal);
-            });
+        // --- Firebase Logic ---
+        async function setupFirestoreListeners() {
+            // Path to the user's data document
+            dbUserRef = doc(db, `artifacts/${appId}/users`, currentUserId);
+            // Path to the logs subcollection
+            dbLogsCollectionRef = collection(dbUserRef, "logs");
 
-            cancelLogBtn.addEventListener('click', () => closeModal(logModal));
-            closeSpokespersonModalBtn.addEventListener('click', () => closeModal(spokespersonModal));
-
-            logForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const logData = {
-                    date: document.getElementById('date').value,
-                    platform: document.getElementById('platform').value,
-                    spokesperson: document.getElementById('spokesperson').value,
-                    channel: document.getElementById('channel').value,
-                    change: document.getElementById('change').value,
-                    status: document.getElementById('status').value,
-                    impactArea: document.getElementById('impactArea').value,
-                    comments: document.getElementById('comments').value,
-                };
-                
-                const editIndex = editIndexInput.value;
-                if(editIndex !== ''){
-                    communicationLogs[editIndex] = logData;
+            // Listen for changes to the user's main document (for spokespersons)
+            onSnapshot(dbUserRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    renderSpokespersons(userData.spokespersons);
                 } else {
-                    communicationLogs.unshift(logData); // Add new logs to the top
+                    // If the user document doesn't exist, create it with default data
+                    setDoc(dbUserRef, { spokespersons: ['Client Contact A', 'Project Manager B'] });
                 }
-
-                saveData();
-                renderTable();
-                closeModal(logModal);
             });
 
-            spokespersonForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const newNameInput = document.getElementById('newSpokespersonName');
-                const newName = newNameInput.value.trim();
-                if (newName && !spokespersons.includes(newName)) {
-                    spokespersons.push(newName);
-                    spokespersons.sort();
-                    saveData();
-                    renderSpokespersons();
-                    newNameInput.value = '';
-                }
+            // Listen for changes to the logs collection
+            onSnapshot(query(dbLogsCollectionRef), (querySnapshot) => {
+                const logs = [];
+                querySnapshot.forEach((doc) => {
+                    logs.push({ id: doc.id, ...doc.data() });
+                });
+                renderTable(logs);
             });
             
-            spokespersonListContainer.addEventListener('click', (e) => {
-                if (e.target.classList.contains('delete-spokesperson')) {
-                    const index = e.target.dataset.index;
-                    spokespersons.splice(index, 1);
-                    saveData();
-                    renderSpokespersons();
-                }
-            });
+            loadingOverlay.style.display = 'none';
+        }
+        
+        // --- Event Handlers ---
+        addLogBtn.addEventListener('click', () => {
+            modalTitle.textContent = "Add New Communication Log";
+            logForm.reset();
+            editLogIdInput.value = '';
+            document.getElementById('date').valueAsDate = new Date();
+            openModal(logModal);
+        });
 
-            logTableBody.addEventListener('click', (e) => {
-                const index = e.target.dataset.index;
-                if (e.target.classList.contains('delete-log')) {
-                    if (confirm('Are you sure you want to delete this log?')) {
-                        communicationLogs.splice(index, 1);
-                        saveData();
-                        renderTable();
-                    }
+        manageSpokespersonBtn.addEventListener('click', () => openModal(spokespersonModal));
+        cancelLogBtn.addEventListener('click', () => closeModal(logModal));
+        closeSpokespersonModalBtn.addEventListener('click', () => closeModal(spokespersonModal));
+
+        logForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const logData = {
+                date: document.getElementById('date').value,
+                platform: document.getElementById('platform').value,
+                spokesperson: document.getElementById('spokesperson').value,
+                channel: document.getElementById('channel').value,
+                change: document.getElementById('change').value,
+                status: document.getElementById('status').value,
+                impactArea: document.getElementById('impactArea').value,
+                comments: document.getElementById('comments').value,
+            };
+            
+            const logId = editLogIdInput.value;
+            try {
+                if (logId) {
+                    // Update existing log
+                    const logRef = doc(dbLogsCollectionRef, logId);
+                    await updateDoc(logRef, logData);
+                } else {
+                    // Add new log
+                    await addDoc(dbLogsCollectionRef, logData);
                 }
-                if (e.target.classList.contains('edit-log')) {
-                    const log = communicationLogs[index];
+                closeModal(logModal);
+            } catch (error) {
+                console.error("Error saving log: ", error);
+                alert("Could not save log. Please check the console for errors.");
+            }
+        });
+
+        spokespersonForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newNameInput = document.getElementById('newSpokespersonName');
+            const newName = newNameInput.value.trim();
+            if (newName && !spokespersons.includes(newName)) {
+                const updatedSpokespersons = [...spokespersons, newName].sort();
+                await setDoc(dbUserRef, { spokespersons: updatedSpokespersons }, { merge: true });
+                newNameInput.value = '';
+            }
+        });
+        
+        spokespersonListContainer.addEventListener('click', async (e) => {
+            if (e.target.classList.contains('delete-spokesperson')) {
+                const nameToDelete = e.target.dataset.name;
+                const updatedSpokespersons = spokespersons.filter(name => name !== nameToDelete);
+                await setDoc(dbUserRef, { spokespersons: updatedSpokespersons }, { merge: true });
+            }
+        });
+
+        logTableBody.addEventListener('click', async (e) => {
+            const logId = e.target.dataset.id;
+            if (!logId) return;
+
+            if (e.target.classList.contains('delete-log')) {
+                showConfirm('Delete Log?', 'Are you sure you want to permanently delete this log?', async (confirmed) => {
+                    if (confirmed) {
+                        try {
+                            await deleteDoc(doc(dbLogsCollectionRef, logId));
+                        } catch (error) {
+                            console.error("Error deleting log: ", error);
+                            alert("Could not delete log.");
+                        }
+                    }
+                });
+            }
+            
+            if (e.target.classList.contains('edit-log')) {
+                const logRef = doc(dbLogsCollectionRef, logId);
+                const docSnap = await getDoc(logRef);
+                if (docSnap.exists()) {
+                    const log = docSnap.data();
                     modalTitle.textContent = "Edit Communication Log";
-                    editIndexInput.value = index;
+                    editLogIdInput.value = logId;
                     document.getElementById('date').value = log.date;
                     document.getElementById('platform').value = log.platform;
                     document.getElementById('spokesperson').value = log.spokesperson;
@@ -359,13 +409,41 @@
                     document.getElementById('comments').value = log.comments;
                     openModal(logModal);
                 }
-            });
-
-
-            // Initial Render
-            renderSpokespersons();
-            renderTable();
+            }
         });
+
+        // --- Authentication and Initialization ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in.
+                currentUserId = user.uid;
+                userIdDisplay.textContent = currentUserId;
+                setupFirestoreListeners();
+            } else {
+                // User is signed out.
+                loadingOverlay.style.display = 'flex';
+                currentUserId = null;
+            }
+        });
+        
+        // Sign in the user. Use custom token if available, otherwise sign in anonymously.
+        async function signIn() {
+            try {
+                const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                if (token) {
+                    await signInWithCustomToken(auth, token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+                loadingOverlay.innerHTML = '<p class="text-red-500">Authentication Failed. Please refresh.</p>';
+            }
+        }
+
+        // Start the application
+        signIn();
+
     </script>
 </body>
 </html>
