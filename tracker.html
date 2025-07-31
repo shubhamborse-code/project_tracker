@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Communication Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        .table-cell {
+            white-space: normal;
+            word-wrap: break-word;
+            max-width: 250px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Client Communication Tracker</h1>
+            <p class="text-gray-600 mt-1">A centralized log for all client interactions and decisions.</p>
+        </header>
+
+        <!-- Controls -->
+        <div class="flex flex-wrap gap-4 mb-6">
+            <button id="addLogBtn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                + Add New Log
+            </button>
+            <button id="manageSpokespersonBtn" class="bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:ring-opacity-75">
+                Manage Spokespersons
+            </button>
+        </div>
+
+        <!-- Communication Log Table -->
+        <div class="bg-white rounded-xl shadow-lg overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-600">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">Date</th>
+                        <th scope="col" class="px-6 py-3">Platform</th>
+                        <th scope="col" class="px-6 py-3">Spokesperson</th>
+                        <th scope="col" class="px-6 py-3">Channel</th>
+                        <th scope="col" class="px-6 py-3">Change Discussed / Implemented</th>
+                        <th scope="col" class="px-6 py-3">Status</th>
+                        <th scope="col" class="px-6 py-3">Impact Area</th>
+                        <th scope="col" class="px-6 py-3">Comments/Follow-up</th>
+                        <th scope="col" class="px-6 py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="logTableBody">
+                    <!-- Rows will be dynamically inserted here -->
+                </tbody>
+            </table>
+            <div id="no-logs-message" class="text-center p-8 text-gray-500 hidden">
+                <p class="font-semibold">No communication logs found.</p>
+                <p>Click "+ Add New Log" to get started.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Log Modal -->
+    <div id="logModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 hidden pointer-events-none opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-transform duration-300 scale-95">
+            <form id="logForm" class="p-8">
+                <h2 id="modalTitle" class="text-2xl font-bold mb-6 text-gray-900">Add New Communication Log</h2>
+                <input type="hidden" id="editIndex">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Date -->
+                    <div>
+                        <label for="date" class="block mb-2 text-sm font-medium text-gray-700">Date</label>
+                        <input type="date" id="date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                    </div>
+                    <!-- Platform -->
+                    <div>
+                        <label for="platform" class="block mb-2 text-sm font-medium text-gray-700">Platform</label>
+                        <input type="text" id="platform" placeholder="e.g., Client's Website" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                    </div>
+                    <!-- Spokesperson -->
+                    <div>
+                        <label for="spokesperson" class="block mb-2 text-sm font-medium text-gray-700">Spokesperson</label>
+                        <select id="spokesperson" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <!-- Options will be populated by JS -->
+                        </select>
+                    </div>
+                    <!-- Channel -->
+                    <div>
+                        <label for="channel" class="block mb-2 text-sm font-medium text-gray-700">Channel</label>
+                        <select id="channel" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <option>Email</option>
+                            <option>Call</option>
+                            <option>Chat</option>
+                            <option>In-Person</option>
+                        </select>
+                    </div>
+                    <!-- Change Discussed -->
+                    <div class="md:col-span-2">
+                        <label for="change" class="block mb-2 text-sm font-medium text-gray-700">Change Discussed / Implemented</label>
+                        <textarea id="change" rows="3" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Describe the key points of the conversation..." required></textarea>
+                    </div>
+                    <!-- Status -->
+                    <div>
+                        <label for="status" class="block mb-2 text-sm font-medium text-gray-700">Status</label>
+                        <select id="status" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <option>Discussed</option>
+                            <option>Approved</option>
+                            <option>In Progress</option>
+                            <option>Implemented</option>
+                            <option>On Hold</option>
+                            <option>Rejected</option>
+                        </select>
+                    </div>
+                    <!-- Impact Area -->
+                    <div>
+                        <label for="impactArea" class="block mb-2 text-sm font-medium text-gray-700">Impact Area</label>
+                        <select id="impactArea" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" required>
+                            <option>GA4</option>
+                            <option>GTM</option>
+                            <option>Cloud</option>
+                            <option>SEO</option>
+                            <option>Ads</option>
+                            <option>General</option>
+                        </select>
+                    </div>
+                    <!-- Comments -->
+                    <div class="md:col-span-2">
+                        <label for="comments" class="block mb-2 text-sm font-medium text-gray-700">Comments / Follow-up</label>
+                        <textarea id="comments" rows="3" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5" placeholder="Any action items or notes for next time..."></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-4 mt-8">
+                    <button type="button" id="cancelLogBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button>
+                    <button type="submit" class="py-2 px-6 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">Save Log</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Manage Spokesperson Modal -->
+    <div id="spokespersonModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 hidden pointer-events-none opacity-0">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-transform duration-300 scale-95">
+            <div class="p-8">
+                <h2 class="text-2xl font-bold mb-6 text-gray-900">Manage Spokespersons</h2>
+                
+                <!-- Add new spokesperson form -->
+                <form id="spokespersonForm" class="flex gap-4 mb-6">
+                    <input type="text" id="newSpokespersonName" placeholder="Add new spokesperson name" class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5" required>
+                    <button type="submit" class="py-2 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700">Add</button>
+                </form>
+
+                <!-- List of current spokespersons -->
+                <h3 class="text-lg font-semibold mb-3 text-gray-800">Current List</h3>
+                <div id="spokespersonList" class="max-h-60 overflow-y-auto space-y-2 pr-2">
+                    <!-- Spokespersons will be listed here -->
+                </div>
+
+                <div class="flex justify-end mt-8">
+                    <button type="button" id="closeSpokespersonModalBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const addLogBtn = document.getElementById('addLogBtn');
+            const manageSpokespersonBtn = document.getElementById('manageSpokespersonBtn');
+            const logModal = document.getElementById('logModal');
+            const spokespersonModal = document.getElementById('spokespersonModal');
+            const cancelLogBtn = document.getElementById('cancelLogBtn');
+            const closeSpokespersonModalBtn = document.getElementById('closeSpokespersonModalBtn');
+            const logForm = document.getElementById('logForm');
+            const spokespersonForm = document.getElementById('spokespersonForm');
+            const logTableBody = document.getElementById('logTableBody');
+            const spokespersonListContainer = document.getElementById('spokespersonList');
+            const spokespersonSelect = document.getElementById('spokesperson');
+            const noLogsMessage = document.getElementById('no-logs-message');
+            const modalTitle = document.getElementById('modalTitle');
+            const editIndexInput = document.getElementById('editIndex');
+
+            // Data storage
+            let communicationLogs = JSON.parse(localStorage.getItem('communicationLogs')) || [];
+            let spokespersons = JSON.parse(localStorage.getItem('spokespersons')) || ['Client Contact A', 'Project Manager B'];
+
+            // --- Utility Functions ---
+            const saveData = () => {
+                localStorage.setItem('communicationLogs', JSON.stringify(communicationLogs));
+                localStorage.setItem('spokespersons', JSON.stringify(spokespersons));
+            };
+
+            const openModal = (modal) => {
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0', 'pointer-events-none');
+                    modal.querySelector('div').classList.remove('scale-95');
+                }, 10);
+            };
+
+            const closeModal = (modal) => {
+                modal.querySelector('div').classList.add('scale-95');
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden', 'pointer-events-none');
+                }, 300);
+            };
+
+            // --- Rendering Functions ---
+            const renderSpokespersons = () => {
+                // Update the dropdown in the log form
+                spokespersonSelect.innerHTML = spokespersons.map(name => `<option value="${name}">${name}</option>`).join('');
+
+                // Update the list in the management modal
+                spokespersonListContainer.innerHTML = spokespersons.map((name, index) => `
+                    <div class="flex justify-between items-center bg-gray-100 p-2 rounded-md">
+                        <span>${name}</span>
+                        <button data-index="${index}" class="delete-spokesperson text-red-500 hover:text-red-700 font-bold">&times;</button>
+                    </div>
+                `).join('');
+                 if(spokespersons.length === 0){
+                    spokespersonListContainer.innerHTML = `<p class="text-gray-500 text-center">No spokespersons added yet.</p>`;
+                }
+            };
+
+            const renderTable = () => {
+                logTableBody.innerHTML = '';
+                if (communicationLogs.length === 0) {
+                    noLogsMessage.classList.remove('hidden');
+                    return;
+                }
+                noLogsMessage.classList.add('hidden');
+
+                communicationLogs.forEach((log, index) => {
+                    const row = document.createElement('tr');
+                    row.className = 'bg-white border-b hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="px-6 py-4 table-cell">${log.date}</td>
+                        <td class="px-6 py-4 table-cell">${log.platform}</td>
+                        <td class="px-6 py-4 table-cell">${log.spokesperson}</td>
+                        <td class="px-6 py-4 table-cell">${log.channel}</td>
+                        <td class="px-6 py-4 table-cell">${log.change}</td>
+                        <td class="px-6 py-4 table-cell"><span class="px-2 py-1 font-semibold leading-tight text-xs rounded-full" style="${getStatusPillStyle(log.status)}">${log.status}</span></td>
+                        <td class="px-6 py-4 table-cell">${log.impactArea}</td>
+                        <td class="px-6 py-4 table-cell">${log.comments}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex gap-2">
+                                <button data-index="${index}" class="edit-log text-blue-600 hover:text-blue-800">Edit</button>
+                                <button data-index="${index}" class="delete-log text-red-600 hover:text-red-800">Delete</button>
+                            </div>
+                        </td>
+                    `;
+                    logTableBody.appendChild(row);
+                });
+            };
+            
+            const getStatusPillStyle = (status) => {
+                const styles = {
+                    'Implemented': 'background-color: #dcfce7; color: #166534;',
+                    'Approved': 'background-color: #dcfce7; color: #166534;',
+                    'In Progress': 'background-color: #fef9c3; color: #854d0e;',
+                    'Discussed': 'background-color: #e0e7ff; color: #3730a3;',
+                    'On Hold': 'background-color: #feebc8; color: #9c4221;',
+                    'Rejected': 'background-color: #fee2e2; color: #991b1b;',
+                }
+                return styles[status] || 'background-color: #f3f4f6; color: #374151;';
+            }
+
+
+            // --- Event Handlers ---
+            addLogBtn.addEventListener('click', () => {
+                modalTitle.textContent = "Add New Communication Log";
+                logForm.reset();
+                editIndexInput.value = '';
+                document.getElementById('date').valueAsDate = new Date(); // Set to today
+                openModal(logModal);
+            });
+
+            manageSpokespersonBtn.addEventListener('click', () => {
+                renderSpokespersons();
+                openModal(spokespersonModal);
+            });
+
+            cancelLogBtn.addEventListener('click', () => closeModal(logModal));
+            closeSpokespersonModalBtn.addEventListener('click', () => closeModal(spokespersonModal));
+
+            logForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const logData = {
+                    date: document.getElementById('date').value,
+                    platform: document.getElementById('platform').value,
+                    spokesperson: document.getElementById('spokesperson').value,
+                    channel: document.getElementById('channel').value,
+                    change: document.getElementById('change').value,
+                    status: document.getElementById('status').value,
+                    impactArea: document.getElementById('impactArea').value,
+                    comments: document.getElementById('comments').value,
+                };
+                
+                const editIndex = editIndexInput.value;
+                if(editIndex !== ''){
+                    communicationLogs[editIndex] = logData;
+                } else {
+                    communicationLogs.unshift(logData); // Add new logs to the top
+                }
+
+                saveData();
+                renderTable();
+                closeModal(logModal);
+            });
+
+            spokespersonForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newNameInput = document.getElementById('newSpokespersonName');
+                const newName = newNameInput.value.trim();
+                if (newName && !spokespersons.includes(newName)) {
+                    spokespersons.push(newName);
+                    spokespersons.sort();
+                    saveData();
+                    renderSpokespersons();
+                    newNameInput.value = '';
+                }
+            });
+            
+            spokespersonListContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-spokesperson')) {
+                    const index = e.target.dataset.index;
+                    spokespersons.splice(index, 1);
+                    saveData();
+                    renderSpokespersons();
+                }
+            });
+
+            logTableBody.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                if (e.target.classList.contains('delete-log')) {
+                    if (confirm('Are you sure you want to delete this log?')) {
+                        communicationLogs.splice(index, 1);
+                        saveData();
+                        renderTable();
+                    }
+                }
+                if (e.target.classList.contains('edit-log')) {
+                    const log = communicationLogs[index];
+                    modalTitle.textContent = "Edit Communication Log";
+                    editIndexInput.value = index;
+                    document.getElementById('date').value = log.date;
+                    document.getElementById('platform').value = log.platform;
+                    document.getElementById('spokesperson').value = log.spokesperson;
+                    document.getElementById('channel').value = log.channel;
+                    document.getElementById('change').value = log.change;
+                    document.getElementById('status').value = log.status;
+                    document.getElementById('impactArea').value = log.impactArea;
+                    document.getElementById('comments').value = log.comments;
+                    openModal(logModal);
+                }
+            });
+
+
+            // Initial Render
+            renderSpokespersons();
+            renderTable();
+        });
+    </script>
+</body>
+</html>
